@@ -1,4 +1,4 @@
-class FlattenTrainable:
+class FlattenMatrix:
     def __init__(self):
         self.__mod_name__ = "flatten"
         self.__cache__ = {'x_shape': None}
@@ -25,7 +25,7 @@ class FlattenTrainable:
 
     def forward(self, x):
         self.__cache__['x_shape'] = x.shape
-        return x.flatten()
+        return x.flatten().reshape(1, -1)
 
     def backward(self, prev_delta):
         x_shape = self.__cache__['x_shape']

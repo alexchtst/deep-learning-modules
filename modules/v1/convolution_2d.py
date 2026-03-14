@@ -8,12 +8,11 @@ class Conv2DTrainable:
         out_channel=3,
         activation_func="sigmoid",
         kernel_size=3,
-        strd=1,
-        padding=0,
     ):
         self.__mod_name__ = "conv2d"
-        self.strd = strd
-        self.padding = padding
+        
+        self.out_channel = out_channel
+        self.in_channel = in_channel
         
         self.activation_name = activation_func
 
@@ -67,39 +66,39 @@ class Conv2DTrainable:
     @property
     def get_params(self):
         return self.__cache__['w'], self.__cache__['b']
+    
+    def get_index_map(self, x):
+        c_in, h_in, w_in = x.shape
+        num_f_k, c_k, h_k, w_k = self.__weights__.shape
+        
+        if h_in < h_k or w_in < w_k:
+            raise ValueError(
+                f"Kernel size ({h_k},{w_k}) lebih besar dari input ({h_in},{w_in})"
+            )
+        
+        max_h_index = h_in - h_k + 1
+        max_w_index = w_in - w_k + 1
+        
+        return max_h_index, max_w_index
 
     def conv_2d(self, x):
-        in_channel, H, W = x.shape
-        out_channel, _, k, _ = self.__weights__.shape
-        
-        # apply spatial padding
-        if self.padding > 0:
-            x = np.pad(
-                x,
-                pad_width=((0, 0), (self.padding, self.padding), (self.padding, self.padding)),
-                mode='constant',
-                constant_values=0
-            )
-            _, H, W = x.shape
-        
-        # output spatial
-        H_out = (H - k) // self.strd + 1
-        W_out = (W - k) // self.strd + 1
-        
-        z = np.zeros((out_channel, H_out, W_out))
-        
-        for f in range(out_channel):
-            for i in range(H_out):
-                for j in range(W_out):
-                    h_start = i * self.strd
-                    h_end   = h_start + k
-                    w_start = j * self.strd
-                    w_end   = w_start + k
-                    
-                    patch = x[:, h_start:h_end, w_start:w_end]
-                    z[f, i, j] = np.sum(patch * self.__weights__[f]) + self.__bias__[f]
-        
-        return z
+        max_h_index, max_w_index = self.get_index_map(x)
+
+        out = np.zeros((self.out_channel, max_h_index, max_w_index))
+
+        for f in range(self.out_channel):
+            kernel = self.__weights__[f]
+
+            for row in range(max_h_index):
+                for col in range(max_w_index):
+
+                    patch = x[:, row:row+self.k_size, col:col+self.k_size]
+
+                    out[f, row, col] = np.sum(
+                        patch * kernel
+                    ) + self.__bias__[f]
+
+        return out
     
     def forward(self, x):
         z = self.conv_2d(x)
@@ -112,46 +111,48 @@ class Conv2DTrainable:
         return a
     
     def backward(self, prev_delta):
-        x = self.__cache__['x_padded']
+
+        x = self.__cache__['x']
         z = self.__cache__['z']
         W = self.__weights__
 
-        out_channel, in_channel, k, _ = W.shape
-        _, H_out, W_out = z.shape
+        C_out, C_in, K, _ = W.shape
+        C_in, H_in, W_in = x.shape
+
+        H_out = H_in - K + 1
+        W_out = W_in - K + 1
 
         da_dz = self.activation_deriv(z)
 
+        # delta layer ini
         delta = prev_delta * da_dz
 
+        # gradient weight
         dl_dw = np.zeros_like(W)
-        dl_db = np.zeros(out_channel)
 
-        delta_prev_padded = np.zeros_like(x)
+        for f in range(C_out):
+            for c in range(C_in):
+                for i in range(K):
+                    for j in range(K):
 
-        for f in range(out_channel):
-            for i in range(H_out):
-                for j in range(W_out):
-                    h_start = i * self.strd
-                    h_end   = h_start + k
-                    w_start = j * self.strd
-                    w_end   = w_start + k
+                        patch = x[c, i:i+H_out, j:j+W_out]
+                        dl_dw[f, c, i, j] = np.sum(
+                            patch * delta[f]
+                        )
 
-                    patch = x[:, h_start:h_end, w_start:w_end]
+        # gradient bias
+        dl_db = np.sum(delta, axis=(1,2))
 
-                    dl_dw[f] += delta[f, i, j] * patch
+        # delta untuk layer sebelumnya
+        delta_prev = np.zeros_like(x)
 
-                    delta_prev_padded[:, h_start:h_end, w_start:w_end] += delta[f, i, j] * W[f]
+        for f in range(C_out):
+            for row in range(H_out):
+                for col in range(W_out):
 
-            dl_db[f] = np.sum(delta[f])
-
-        if self.padding > 0:
-            delta_prev = delta_prev_padded[
-                :,
-                self.padding:-self.padding,
-                self.padding:-self.padding
-            ]
-        else:
-            delta_prev = delta_prev_padded
+                    delta_prev[:, row:row+K, col:col+K] += (
+                        W[f] * delta[f, row, col]
+                    )
 
         return dl_dw, dl_db, delta_prev
 
@@ -160,4 +161,14 @@ class Conv2DTrainable:
         self.__bias__ -= lr * dl_db
         self.__cache__['w'] = self.__weights__
         self.__cache__['b'] = self.__bias__
+
+class Conv2d:
+    def __init__(self, kernel_weights, bias):
+        self.kernel = kernel_weights
+        self.bias = bias
+        
+    def conv_2d(self, x):
+        pass
     
+    def pass_forward(self, x):
+        pass

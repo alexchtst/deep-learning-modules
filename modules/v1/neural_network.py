@@ -106,3 +106,12 @@ class NeuralNetworkTrainable:
 
         self.__cache__['w'] = self.__weights__
         self.__cache__['b'] = self.__bias__
+        
+
+class NeuralNetwork:
+    def __init__(self, weights, bias):
+        self.weights = weights
+        self.bias = bias
+        
+    def pass_forward(self, x):
+        pass

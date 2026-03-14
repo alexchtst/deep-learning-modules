@@ -1,6 +1,6 @@
 import numpy as np
 
-class SeqFramework:
+class SeqFrameworkTrainable:
     def __init__(self):
         
         """ __models_conf__ is a list that contain of
@@ -79,6 +79,8 @@ class SeqFramework:
             idx = rng.choice(x.shape[0], size=num_samples, replace=True)
             x_input = x[idx]
             y_true = Y[idx]
+            
+            print(x_input.shape)
 
             y_pred = self.run_forward(x_input)
             loss = np.mean((y_pred - y_true) ** 2) / 2

@@ -1,4 +1,3 @@
-from modules.v1.activation_function import ActivationFunctions
 import numpy as np
 
 class MaxPool2DTrainable:
