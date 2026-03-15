@@ -1,0 +1,22 @@
+# Global owner for the repository
+* @alexchtst
+
+# Data directory
+/data/ @alexchtst
+
+# Example notebooks
+/examples/ @alexchtst
+
+# Core deep learning modules
+/modules/ @alexchtst
+
+# Versioned modules
+/modules/v1/ @alexchtst
+
+# Hardware / FPGA related code
+/modules/fpga.py @alexchtst
+/modules/translator.py @alexchtst
+
+# Documentation
+README.md @alexchtst
+modules/README.md @alexchtst
