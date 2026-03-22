@@ -37,6 +37,7 @@ class Conv2DTrainable:
             limit,
             (out_channel,)
         )
+        self.__batch_cache__ = []
         
         self.__cache__ = {
             'x': None,
@@ -100,17 +101,74 @@ class Conv2DTrainable:
 
         return out
     
-    def forward(self, x):
+    def __single_forward(self, x):
         z = self.conv_2d(x)
         a = self.activation(z)
         
-        self.__cache__['x'] = x
+        
         self.__cache__['z'] = z
         self.__cache__['a'] = a
         
         return a
     
+    def forward(self, x):
+        B, C, H, W = x.shape
+
+        outputs = []
+        self.__batch_cache__ = []
+
+        for i in range(B):
+            single_x = x[i]
+
+            self.__cache__['x'] = single_x
+
+            a = self.__single_forward(single_x)
+
+            self.__batch_cache__.append({
+                'x': single_x,
+                'z': self.__cache__['z'],
+                'a': self.__cache__['a']
+            })
+
+            outputs.append(a)
+
+        return np.stack(outputs, axis=0)
+    
     def backward(self, prev_delta):
+       
+        B = prev_delta.shape[0]
+
+        total_dl_dw = np.zeros_like(self.__weights__)
+        total_dl_db = np.zeros_like(self.__bias__)
+
+        delta_prev_batch = []
+
+        for i in range(B):
+
+            cache = self.__batch_cache__[i]
+
+            self.__cache__['x'] = cache['x']
+            self.__cache__['z'] = cache['z']
+
+            dl_dw, dl_db, delta_prev = self.__single_backward(
+                prev_delta[i]
+            )
+
+            total_dl_dw += dl_dw
+            total_dl_db += dl_db
+            delta_prev_batch.append(delta_prev)
+
+        total_dl_dw /= B
+        total_dl_db /= B
+
+        self.__cache__['dl'] = (
+            total_dl_dw,
+            total_dl_db
+        )
+
+        return total_dl_dw, total_dl_db, np.stack(delta_prev_batch, axis=0)
+    
+    def __single_backward(self, prev_delta):
 
         x = self.__cache__['x']
         z = self.__cache__['z']

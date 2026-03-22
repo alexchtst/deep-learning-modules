@@ -25,7 +25,7 @@ class FlattenMatrix:
 
     def forward(self, x):
         self.__cache__['x_shape'] = x.shape
-        return x.flatten().reshape(1, -1)
+        return x.flatten().reshape(x.shape[0], -1)
 
     def backward(self, prev_delta):
         x_shape = self.__cache__['x_shape']

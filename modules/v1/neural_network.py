@@ -67,6 +67,7 @@ class NeuralNetworkTrainable:
         return self.__cache__['w'], self.__cache__['b']
     
     def forward(self, x):
+        # print("input shape", x.shape)
 
         z = np.dot(x, self.__weights__) + self.__bias__
         a = self.activation(z)
@@ -89,10 +90,10 @@ class NeuralNetworkTrainable:
         delta = prev_delta * da_dz
 
         # gradient parameter
-        dl_dw = x.T @ delta
-        # dl_dw = (x.T @ delta) / x.shape[0]
-        dl_db = np.sum(delta, axis=0, keepdims=True)
-        # dl_db = np.sum(delta, axis=0, keepdims=True) / x.shape[0]
+        # dl_dw = x.T @ delta
+        dl_dw = (x.T @ delta) / x.shape[0]
+        # dl_db = np.sum(delta, axis=0, keepdims=True)
+        dl_db = np.sum(delta, axis=0, keepdims=True) / x.shape[0]
 
         # delta untuk layer sebelumnya
         delta_prev = delta @ W.T
