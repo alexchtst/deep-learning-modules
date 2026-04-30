@@ -142,7 +142,7 @@ class Pool2DTrainable(DeepLearningBaseModel):
         if self.mode == "global_mean":
             return self._global_backward(prev_delta, mode="mean")
 
-        return self._local_backward(prev_delta)
+        return None, None, self._local_backward(prev_delta)
     
     def _local_backward(self, prev_delta: np.ndarray) -> np.ndarray:
         x    = self._cache["x"]
