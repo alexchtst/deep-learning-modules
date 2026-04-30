@@ -37,8 +37,8 @@ class ActivationFunction:
     def __init__(self, name: str = "sigmoid"):
         if name not in self.SUPPORTED:
             raise ValueError(
-                f"Activation '{name}' tidak dikenal. "
-                f"Pilihan yang tersedia: {sorted(self.SUPPORTED)}"
+                f"Activation '{name}' not found. "
+                f"{sorted(self.SUPPORTED)}"
             )
         self.name = name
 
@@ -99,8 +99,8 @@ class DerivativeFunction:
     def __init__(self, name: str = "sigmoid"):
         if name not in ActivationFunction.SUPPORTED:
             raise ValueError(
-                f"Derivative '{name}' tidak dikenal. "
-                f"Pilihan yang tersedia: {sorted(ActivationFunction.SUPPORTED)}"
+                f"Derivative '{name}' not found. "
+                f"{sorted(ActivationFunction.SUPPORTED)}"
             )
         self.name = name
 
@@ -167,7 +167,7 @@ class SoftmaxFunction:
         if z.ndim != 1:
             raise ValueError(
                 "jacobian() onlu take 1-D input. "
-                "Untuk batch, hitung per sampel."
+                "calculate each sampel for batch."
             )
         s = self.forward(z)
         return np.diagflat(s) - np.outer(s, s)
