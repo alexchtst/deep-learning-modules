@@ -91,23 +91,23 @@ class SeqFrameworkTrainable:
     ) -> None:
         
         if len(self.__models) == 0:
-            raise RuntimeError("Tidak ada layer. Panggil add() dulu.")
+            raise RuntimeError("There is no layer. Call add() first.")
         
         if loss == "categorical_ce":
             last_layer = self.__models[-1]
             if not isinstance(last_layer, SoftmaxLayer):
                 raise ValueError(
-                    "Loss 'categorical_ce' membutuhkan SoftmaxLayer sebagai "
-                    "layer terakhir. Tambahkan model.add(SoftmaxLayer()) "
-                    "sebelum compile()."
+                    "Loss 'categorical_ce' requires SoftmaxLayer as "
+                    "lLast layer. Add model.add(SoftmaxLayer())"
+                    "before compile()."
                 )
         
         if loss == "binary_ce":
             last_layer = self.__models[-1]
             if hasattr(last_layer, "output_size") and last_layer.output_size != 1:
                 raise ValueError(
-                    f"Loss 'binary_ce' membutuhkan output_size=1, "
-                    f"dapat {last_layer.output_size}."
+                    f"Loss 'binary_ce' requires output_size=1,"
+                    f"{last_layer.output_size}."
                 )
                 
         self._loss_fn   = LossFunction(loss)
@@ -127,7 +127,7 @@ class SeqFrameworkTrainable:
         
         if not self._compiled:
             raise RuntimeError(
-                "Model belum di-compile. Panggil compile() dulu."
+                "The model hasn't been compiled yet. Call compile() first."
             )
         N = X.shape[0]
         n_batches = int(np.ceil(N / batch_size))
@@ -187,7 +187,7 @@ class SeqFrameworkTrainable:
             
     def predict(self, X: np.ndarray) -> np.ndarray:
         if not self._compiled:
-            raise RuntimeError("Model belum di-compile.")
+            raise RuntimeError("The model has not been compiled yet.")
         a = X
         for layer in self.__models:
             a = layer.forward(a)
