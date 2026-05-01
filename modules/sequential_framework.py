@@ -1,7 +1,10 @@
 from modules.base_model import DeepLearningBaseModel
-import numpy as np
 from modules.loss_function_optim import LossFunction, SGDMomentum
 from modules.softmax_layer import SoftmaxLayer
+import os
+import json
+import numpy as np
+from datetime import datetime
 
 class SeqFrameworkTrainable:
     def __init__(self):
@@ -30,7 +33,7 @@ class SeqFrameworkTrainable:
         
     @property
     def loss_hist(self) -> list:
-        return self.__models_conf
+        return self.__loss_hist
     
     @property
     def get_models(self) -> list:
@@ -175,7 +178,7 @@ class SeqFrameworkTrainable:
                 )
                 
             avg_loss = epoch_loss / n_batches
-            self.__models_conf.append(avg_loss)
+            self.__loss_hist.append(avg_loss)
             print(
                 f"Epoch {epoch}/{epochs} "
                 f"| Avg Loss: {avg_loss:.6f}"
@@ -225,4 +228,60 @@ class SeqFrameworkTrainable:
         )
         print(f"{'Total':<14} {'':<16} {total_params:>8} {total_mem_str:>10}")
         print("=" * 58 + "\n")
+    
+    def save_model_config(
+        self,
+        train_acc: float = 0.0,
+        test_acc: float = 0.0,
+        base_folder: str = "folder_results"
+    ):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        folder_name = f"{base_folder}_{timestamp}"
+        os.makedirs(folder_name, exist_ok=True)
+
+        config_output = []
+
+        for conf in self.__models_conf:
+            name = conf["name"]
+            idx = conf["index"]
+
+            has_forward = conf["hasforward"]
+
+            w_filename = None
+            b_filename = None
+
+            if has_forward:
+                weights = conf["params"]["weights"]
+                bias = conf["params"]["bias"]
+
+                w_filename = f"{name}-{idx}-weights.npz"
+                b_filename = f"{name}-{idx}-bias.npz"
+
+                w_path = os.path.join(folder_name, w_filename)
+                b_path = os.path.join(folder_name, b_filename)
+
+                np.savez_compressed(w_path, weights=weights)
+                np.savez_compressed(b_path, bias=bias)
+
+            config_output.append({
+                "name": f"{name}-{idx}",
+                "wparam": w_filename,
+                "bparam": b_filename,
+                "activation": conf["activation"],
+                "bytesize": str(conf["size"]),
+                "forward": has_forward
+            })
+
+        result_json = {
+            "timestamp": timestamp,
+            "trainaccuracy": train_acc,
+            "testaccuracy": test_acc,
+            "configuration": config_output
+        }
+
+        json_path = os.path.join(folder_name, "model_results.json")
+        with open(json_path, "w") as f:
+            json.dump(result_json, f, indent=4)
+
+        print(f"Model saved in folder: {folder_name}")
         
