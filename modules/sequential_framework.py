@@ -225,3 +225,4 @@ class SeqFrameworkTrainable:
         )
         print(f"{'Total':<14} {'':<16} {total_params:>8} {total_mem_str:>10}")
         print("=" * 58 + "\n")
+        

@@ -1,6 +1,5 @@
 import numpy as np
 from modules.base_model import DeepLearningBaseModel
-from modules.nonlinear_function import SoftmaxFunction
 
 class LossFunction:
  
